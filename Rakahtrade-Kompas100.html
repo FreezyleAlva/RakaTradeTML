@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10b981">
-<meta name="description" content="Rakahtrade — Kompas100 Live Algorithmic Trading & Portfolio Management System">
-<title>Rakahtrade — Kompas100 Live (MNC Sekuritas Fee)</title>
+<meta name="description" content="Rakahtrade — dashboard analisis portofolio dan strategi Kompas100 dengan data snapshot historis.">
+<title>Rakahtrade — Dashboard Kompas100</title>
 
 <!-- Favicon SVG -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%2310b981'/><stop offset='100%25' stop-color='%23059669'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M30 26 H56 Q72 26 72 41 Q72 54 58 56 L73 78 H58 L46 58 H30 V78 H20 V26 H30 Z M30 36 V48 H54 Q61 48 61 41 Q61 36 54 36 Z' fill='%23ffffff'/><circle cx='76' cy='28' r='8' fill='%2334d399'/></svg>">
@@ -652,6 +652,53 @@ table.data-table tr:hover td { background: var(--panel-hover); }
   color: var(--ink-muted);
   margin-bottom: 20px;
 }
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.nav-tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font: inherit;
+}
+.nav-tab.active { border-bottom-color: var(--gain); }
+.nav-tab:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid var(--mod-d);
+  outline-offset: 2px;
+}
+.data-notice {
+  max-width: 1340px;
+  margin: 14px auto 0;
+  padding: 10px 14px;
+  color: var(--ink);
+  background: var(--panel);
+  border-left: 4px solid var(--mod-c);
+  font-size: 0.82rem;
+}
+@media (max-width: 760px) {
+  .top-header { align-items: flex-start; flex-direction: column; gap: 12px; padding: 12px 16px; }
+  .brand-title { flex-wrap: wrap; font-size: 1.1rem; }
+  .header-actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .live-badge { width: 100%; }
+  .header-actions .btn-pill { flex: 1 1 auto; justify-content: center; }
+  .nav-bar { gap: 14px; padding: 0 16px; }
+  .nav-tab { padding-top: 11px; padding-bottom: 9px; font-size: 0.82rem; }
+  .main-wrapper { padding: 14px 12px 32px; }
+  .equity-card, .section-panel { padding: 14px; }
+  .section-title-bar { align-items: flex-start; }
+  .filter-row { width: 100%; }
+  .search-input { flex: 1 1 160px; min-height: 40px; }
+  .capital-badge { margin-left: 0; }
+  .data-notice { margin: 10px 12px 0; }
+}
+@media (max-width: 420px) {
+  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpi-card { min-width: 0; padding: 12px; }
+  .kpi-val { font-size: 1.15rem; overflow-wrap: anywhere; }
+  .brand-sub { line-height: 1.4; }
+}
 </style>
 </head>
 <body>
@@ -671,23 +718,23 @@ table.data-table tr:hover td { background: var(--panel-hover); }
         <span class="badge-pro">PRO</span>
         <span class="badge-broker" id="header-broker-tag">MNC Sekuritas</span>
       </div>
-      <div class="brand-sub">Kompas100 · Fee Beli 0,18% · Fee Jual 0,28% (MNC Sekuritas) · BEI / IDX</div>
+      <div class="brand-sub">Kompas100 · Fee broker mengikuti preset · BEI / IDX</div>
     </div>
   </div>
   
   <div class="header-actions">
     <div class="live-badge">
-      <span class="pulse-dot"></span>
-      <span id="live-status-text">Live · data Rabu, 14 Okt 2026 · dihitung 20:10 WIB</span>
+      <span class="pulse-dot" aria-hidden="true"></span>
+      <span id="live-status-text">Snapshot historis · 14 Okt 2026, 20:10 WIB</span>
     </div>
-    <button class="btn-pill" id="btn-copy-orders" title="Salin seluruh order sesi berikutnya ke clipboard">
-      📋 Salin Order
+    <button class="btn-pill" id="btn-copy-orders" title="Salin ringkasan posisi snapshot ke clipboard">
+      📋 Salin Posisi
     </button>
     <button class="btn-pill" id="btn-theme-toggle" title="Ganti Tema Gelap / Terang">
       🌓 <span id="theme-text">Gelap</span>
     </button>
-    <button class="btn-pill" id="btn-refresh" title="Perbarui kuotasi & sinyal">
-      🔄 Perbarui
+    <button class="btn-pill" id="btn-refresh" title="Lihat status sumber data">
+      Status Data
     </button>
     <button class="btn-pill primary" id="btn-settings" title="Pengaturan Akun & Sekuritas">
       ⚙️ Pengaturan
@@ -696,13 +743,15 @@ table.data-table tr:hover td { background: var(--panel-hover); }
 </header>
 
 <!-- Navigation Tabs -->
-<nav class="nav-bar">
-  <div class="nav-tab active" data-tab="dashboard">Dashboard</div>
-  <div class="nav-tab" data-tab="order-posisi">Order &amp; Posisi</div>
-  <div class="nav-tab" data-tab="dipantau">Sedang Dipantau</div>
-  <div class="nav-tab" data-tab="equity-curve">Equity Curve</div>
-  <div class="nav-tab" data-tab="trading-jurnal">Trading Jurnal</div>
-  <div class="nav-tab" data-tab="backtest">Backtest</div>
+<aside class="data-notice" role="status"><strong>Mode snapshot:</strong> data statis per 14 Okt 2026, bukan harga real-time atau rekomendasi transaksi. Watchlist berisi 11 ticker sampel; jurnal berisi 10 baris contoh. Angka performa dalam file belum diverifikasi terhadap data broker atau IDX.</aside>
+
+<nav class="nav-bar" aria-label="Navigasi dashboard">
+  <button type="button" class="nav-tab active" data-tab="dashboard" aria-current="page">Dashboard</button>
+  <button type="button" class="nav-tab" data-tab="order-posisi">Order &amp; Posisi</button>
+  <button type="button" class="nav-tab" data-tab="dipantau">Sedang Dipantau</button>
+  <button type="button" class="nav-tab" data-tab="equity-curve">Equity Curve</button>
+  <button type="button" class="nav-tab" data-tab="trading-jurnal">Trading Jurnal</button>
+  <button type="button" class="nav-tab" data-tab="backtest">Backtest</button>
 </nav>
 
 <!-- Main Workspace -->
@@ -714,7 +763,7 @@ table.data-table tr:hover td { background: var(--panel-hover); }
     <!-- Top Equity Banner Card -->
     <div class="equity-card">
       <div class="equity-meta">
-        <span>Sejak 14 Okt 2021 · go-live 3 Okt 2026 · 100 saham Kompas100 · Fee MNC Sekuritas (0.18% / 0.28%)</span>
+        <span>Snapshot 14 Okt 2026 · 11 posisi sampel · harga tidak real-time</span>
         <span style="font-weight: 800; color: #10b981; font-size:0.92rem;" id="meta-portfolio-equity">Portfolio Equity: Rp 454.600.000 (+354,60%)</span>
       </div>
       
@@ -786,7 +835,7 @@ table.data-table tr:hover td { background: var(--panel-hover); }
           <div class="kpi-name">Fee broker dibayar</div>
           <div class="kpi-val" id="kpi-fee">Rp 41,2 jt</div>
         </div>
-        <div class="kpi-sub">605 transaksi · MNC Sekuritas (0.18%/0.28%)</div>
+        <div class="kpi-sub">Angka klaim di file sumber · belum diverifikasi</div>
       </div>
       <!-- 5. Posisi Terbuka -->
       <div class="kpi-card">
@@ -799,43 +848,43 @@ table.data-table tr:hover td { background: var(--panel-hover); }
       <!-- 6. Order Sesi Berikutnya -->
       <div class="kpi-card">
         <div>
-          <div class="kpi-name">Order sesi berikutnya</div>
+          <div class="kpi-name">Order pada snapshot</div>
           <div class="kpi-val" id="kpi-order">0</div>
         </div>
-        <div class="kpi-sub">Kamis, 15 Okt 2026</div>
+          <div class="kpi-sub">Bukan sinyal aktif atau real-time</div>
       </div>
 
       <!-- 7. Winning Ratio -->
       <div class="kpi-card">
         <div>
           <div class="kpi-name">Winning ratio</div>
-          <div class="kpi-val" id="kpi-wr">51%</div>
+          <div class="kpi-val" id="kpi-wr">80%</div>
         </div>
-        <div class="kpi-sub">245 trade selesai</div>
+        <div class="kpi-sub">8 menang dari 10 baris sampel</div>
       </div>
       <!-- 8. Profit Factor -->
       <div class="kpi-card">
         <div>
           <div class="kpi-name">Profit factor</div>
-          <div class="kpi-val" id="kpi-pf">2,71</div>
+          <div class="kpi-val" id="kpi-pf">7,34</div>
         </div>
-        <div class="kpi-sub">total untung ÷ total rugi</div>
+        <div class="kpi-sub">Net P/L 10 baris sampel · belum terverifikasi</div>
       </div>
       <!-- 9. Rata-rata Untung -->
       <div class="kpi-card">
         <div>
           <div class="kpi-name">Rata-rata untung</div>
-          <div class="kpi-val gain" id="kpi-aw">+25,8%</div>
+          <div class="kpi-val gain" id="kpi-aw">+9,29%</div>
         </div>
-        <div class="kpi-sub">dipegang ±46 hari</div>
+        <div class="kpi-sub">rata-rata 8 baris sampel menang</div>
       </div>
       <!-- 10. Rata-rata Rugi -->
       <div class="kpi-card">
         <div>
           <div class="kpi-name">Rata-rata rugi</div>
-          <div class="kpi-val loss" id="kpi-al">-9,9%</div>
+          <div class="kpi-val loss" id="kpi-al">-5,07%</div>
         </div>
-        <div class="kpi-sub">dipegang ±25 hari</div>
+        <div class="kpi-sub">rata-rata 2 baris sampel rugi</div>
       </div>
       <!-- 11. Max Drawdown -->
       <div class="kpi-card">
@@ -859,7 +908,7 @@ table.data-table tr:hover td { background: var(--panel-hover); }
     <div class="capital-card">
       <div class="capital-label">Modal saya (Rp)</div>
       <div class="capital-input-wrapper">
-        <input type="text" class="capital-input" id="input-capital" value="100.000.000" placeholder="mis. 100.000.000">
+        <input type="text" inputmode="numeric" autocomplete="off" class="capital-input" id="input-capital" value="100.000.000" placeholder="mis. 100.000.000" aria-label="Modal dalam rupiah">
       </div>
       <div class="capital-hint">isi modal Anda untuk menghitung lot sendiri</div>
       <div class="capital-badge" id="capital-slot-badge">Alokasi: ~Rp 9.090.909 / slot (11 posisi)</div>
@@ -874,9 +923,9 @@ table.data-table tr:hover td { background: var(--panel-hover); }
         <div>
           <div class="section-title">
             Posisi Terbuka Aktif
-            <span class="badge-count gain">11 Saham</span>
+            <span class="badge-count gain">11 Posisi Sampel</span>
           </div>
-          <div class="brand-sub" style="margin-top:2px;">100% modal terpakai · Evaluasi real-time harga closing/kuotasi · Fee MNC Beli 0,18% &amp; Jual 0,28%</div>
+          <div class="brand-sub" style="margin-top:2px;">Harga snapshot · bukan evaluasi real-time · fee mengikuti preset broker</div>
         </div>
         <div class="filter-row">
           <button class="btn-pill primary" id="btn-export-orders">📥 Export CSV</button>
@@ -917,9 +966,9 @@ table.data-table tr:hover td { background: var(--panel-hover); }
         <div>
           <div class="section-title">
             Radar &amp; Daftar Pantau Kompas100
-            <span class="badge-count" id="count-dipantau">100 Saham</span>
+            <span class="badge-count" id="count-dipantau">11 Sampel</span>
           </div>
-          <div class="brand-sub" style="margin-top:2px;">Penyaringan Golden Cross MA50/200 &amp; Pullback RSI(4) &lt; 10</div>
+          <div class="brand-sub" style="margin-top:2px;">11 ticker sampel · bukan seluruh anggota Kompas100 · snapshot historis</div>
         </div>
         <div class="filter-row">
           <button class="filter-btn active" data-filter="all">Semua</button>
@@ -963,7 +1012,7 @@ table.data-table tr:hover td { background: var(--panel-hover); }
         <div class="filter-row">
           <button class="filter-btn" data-range="1y">1 Tahun</button>
           <button class="filter-btn" data-range="3y">3 Tahun</button>
-          <button class="filter-btn active" data-range="5y">Sejak 2021</button>
+          <button class="filter-btn active" data-range="5y">5 Tahun</button>
           <button class="filter-btn" data-range="all">Semua Data</button>
         </div>
       </div>
@@ -1015,16 +1064,16 @@ table.data-table tr:hover td { background: var(--panel-hover); }
       <div class="section-title-bar">
         <div>
           <div class="section-title">
-            Trading Jurnal Tertutup (Net Fee MNC Sekuritas 0.18% / 0.28%)
-            <span class="badge-count" id="count-trades">245 Trade</span>
+            Jurnal Transaksi Sampel
+            <span class="badge-count" id="count-trades">10 Sampel</span>
           </div>
-          <div class="brand-sub">Catatan histori lengkap seluruh transaksi yang sudah direalisasikan</div>
+          <div class="brand-sub">10 baris contoh lokal · bukan histori lengkap atau catatan broker terverifikasi</div>
         </div>
         <div class="filter-row">
           <button class="btn-pill" id="btn-export-journal">📥 Unduh Jurnal (.CSV)</button>
-          <button class="filter-btn active" data-tfilter="all">Semua (245)</button>
-          <button class="filter-btn" data-tfilter="win">Menang (125)</button>
-          <button class="filter-btn" data-tfilter="loss">Rugi (120)</button>
+          <button class="filter-btn active" data-tfilter="all">Semua (10)</button>
+          <button class="filter-btn" data-tfilter="win">Menang (8)</button>
+          <button class="filter-btn" data-tfilter="loss">Rugi (2)</button>
           <input type="text" class="search-input" id="search-journal" placeholder="Filter ticker...">
         </div>
       </div>
@@ -1060,10 +1109,10 @@ table.data-table tr:hover td { background: var(--panel-hover); }
       <div class="section-title-bar">
         <div>
           <div class="section-title">Pengaturan &amp; Simulasi Ulang Sistem Rakahtrade</div>
-          <div class="brand-sub">Sinkronisasi parameter logika hybrid, komisi broker MNC Sekuritas, dan ukuran posisi</div>
+          <div class="brand-sub">Draft parameter saja · belum ada mesin backtest atau hasil simulasi yang dapat dijalankan</div>
         </div>
         <button class="btn-pill primary" id="btn-run-sim">
-          ▶ Jalankan Simulasi Ulang
+          Mesin Backtest Belum Terhubung
         </button>
       </div>
 
@@ -1114,7 +1163,7 @@ table.data-table tr:hover td { background: var(--panel-hover); }
         </div>
 
         <div style="background:var(--table-stripe); border:1px solid var(--panel-border); border-radius:12px; padding:16px;">
-          <h4 style="font-size:0.92rem; margin-bottom:10px; color:var(--ink-title);">Portofolio &amp; Biaya Transaksi (MNC Sekuritas)</h4>
+          <h4 style="font-size:0.92rem; margin-bottom:10px; color:var(--ink-title);">Portofolio &amp; Biaya Transaksi</h4>
           <div style="display:flex; gap:10px; margin-bottom:10px;">
             <div style="flex:1;">
               <label style="display:block; font-size:0.8rem; color:var(--ink-muted); margin-bottom:4px;">Jumlah Slot</label>
@@ -1186,6 +1235,14 @@ table.data-table tr:hover td { background: var(--panel-hover); }
 <script>
 // ---------- State & Persistence ----------
 const RAKAHTRADE_KEY = 'rakahtrade_state_v1';
+const BROKER_PRESETS = {
+  mnc: { name: 'MNC Sekuritas', feeBuy: 0.18, feeSell: 0.28 },
+  mnc_promo: { name: 'MNC Promo', feeBuy: 0.12, feeSell: 0.22 },
+  mirae: { name: 'Mirae Asset', feeBuy: 0.15, feeSell: 0.25 },
+  mandiri: { name: 'Mandiri Sekuritas', feeBuy: 0.18, feeSell: 0.28 },
+  ipot: { name: 'IPOT', feeBuy: 0.19, feeSell: 0.29 },
+  stockbit: { name: 'Stockbit', feeBuy: 0.1, feeSell: 0.2 }
+};
 let appState = {
   theme: 'light',
   capital: 100000000,
@@ -1198,12 +1255,23 @@ function loadSavedState() {
   try {
     const raw = localStorage.getItem(RAKAHTRADE_KEY);
     if (raw) Object.assign(appState, JSON.parse(raw));
-  } catch(e) {}
+  } catch (error) {
+    console.warn('Pengaturan lokal tidak dapat dibaca:', error);
+  }
+  if (!['light', 'dark'].includes(appState.theme)) appState.theme = 'light';
+  if (!Number.isFinite(appState.capital) || appState.capital < 1) appState.capital = 100000000;
+  if (!Number.isFinite(appState.feeBuy) || !Number.isFinite(appState.feeSell)) {
+    appState.feeBuy = 0.18;
+    appState.feeSell = 0.28;
+  }
+  if (!BROKER_PRESETS[appState.broker]) appState.broker = 'mnc';
 }
 function saveState() {
   try {
     localStorage.setItem(RAKAHTRADE_KEY, JSON.stringify(appState));
-  } catch(e) {}
+  } catch (error) {
+    console.warn('Pengaturan lokal tidak dapat disimpan:', error);
+  }
 }
 
 loadSavedState();
@@ -1239,6 +1307,7 @@ document.querySelectorAll('.btn-preset-cap').forEach(btn => {
     const val = parseInt(btn.dataset.val, 10);
     appState.capital = val;
     document.getElementById('input-capital').value = nfRp.format(val);
+    document.getElementById('capital-slot-badge').textContent = 'Alokasi: ~' + formatRupiah(Math.round(val / ACTIVE_POSITIONS.length)) + ' / slot (' + ACTIVE_POSITIONS.length + ' posisi)';
     renderPositionsTable(val);
     showToast('Modal diset ke: ' + formatRupiah(val));
     saveState();
@@ -1247,20 +1316,12 @@ document.querySelectorAll('.btn-preset-cap').forEach(btn => {
 
 document.getElementById('btn-save-modal').addEventListener('click', () => {
   const sel = document.getElementById('modal-broker-preset').value;
+  const preset = BROKER_PRESETS[sel];
+  if (!preset) return;
   appState.broker = sel;
-  if (sel === 'mnc') {
-    appState.feeBuy = 0.18;
-    appState.feeSell = 0.28;
-    document.getElementById('header-broker-tag').textContent = 'MNC Sekuritas';
-  } else if (sel === 'mnc_promo') {
-    appState.feeBuy = 0.12;
-    appState.feeSell = 0.22;
-    document.getElementById('header-broker-tag').textContent = 'MNC Promo';
-  } else if (sel === 'mirae') {
-    appState.feeBuy = 0.15;
-    appState.feeSell = 0.25;
-    document.getElementById('header-broker-tag').textContent = 'Mirae Asset';
-  }
+  appState.feeBuy = preset.feeBuy;
+  appState.feeSell = preset.feeSell;
+  document.getElementById('header-broker-tag').textContent = preset.name;
   document.getElementById('p-fee-b').value = appState.feeBuy;
   document.getElementById('p-fee-s').value = appState.feeSell;
   saveState();
@@ -1278,7 +1339,8 @@ function formatRupiah(num) {
 }
 function parseRupiahInput(val) {
   const digits = String(val).replace(/[^0-9]/g, '');
-  return parseInt(digits, 10) || 100000000;
+  const amount = Number(digits);
+  return Number.isSafeInteger(amount) ? amount : 0;
 }
 
 // ---------- Tab Switcher ----------
@@ -1287,6 +1349,10 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     tab.classList.add('active');
+    tab.setAttribute('aria-current', 'page');
+    document.querySelectorAll('.nav-tab').forEach(otherTab => {
+      if (otherTab !== tab) otherTab.removeAttribute('aria-current');
+    });
     const target = document.getElementById('tab-' + tab.dataset.tab);
     if (target) target.classList.add('active');
     if (tab.dataset.tab === 'equity-curve') renderDetailEquityChart();
@@ -1302,8 +1368,7 @@ function showToast(msg, duration = 3000) {
 }
 
 document.getElementById('btn-refresh').addEventListener('click', () => {
-  showToast('Memperbarui kuotasi pasar Kompas100...');
-  setTimeout(() => { showToast('Rakahtrade Live: Data Rabu, 14 Okt 2026 20:10 WIB'); }, 800);
+  showToast('Feed pasar belum terhubung. Data yang tampil adalah snapshot statis per 14 Okt 2026.');
 });
 
 // ---------- Data Model: 11 Active Positions (From Screenshot) ----------
@@ -1324,15 +1389,32 @@ const ACTIVE_POSITIONS = [
 // ---------- Capital Calculator Reactive Engine ----------
 const capitalInput = document.getElementById('input-capital');
 capitalInput.value = nfRp.format(appState.capital);
+document.getElementById('modal-broker-preset').value = appState.broker;
+document.getElementById('header-broker-tag').textContent = BROKER_PRESETS[appState.broker].name;
+document.getElementById('p-fee-b').value = appState.feeBuy;
+document.getElementById('p-fee-s').value = appState.feeSell;
 
 capitalInput.addEventListener('input', (e) => {
   const raw = parseRupiahInput(e.target.value);
-  e.target.value = nfRp.format(raw);
   appState.capital = raw;
   saveState();
+  if (!raw) {
+    document.getElementById('capital-slot-badge').textContent = 'Masukkan modal lebih dari Rp 0';
+    document.getElementById('tbody-posisi').replaceChildren();
+    return;
+  }
   renderPositionsTable(raw);
-  const slotVal = Math.round(raw / 11);
-  document.getElementById('capital-slot-badge').textContent = 'Alokasi: ~' + formatRupiah(slotVal) + ' / slot (11 posisi)';
+  const slotVal = Math.round(raw / ACTIVE_POSITIONS.length);
+  document.getElementById('capital-slot-badge').textContent = 'Alokasi: ~' + formatRupiah(slotVal) + ' / slot (' + ACTIVE_POSITIONS.length + ' posisi)';
+});
+capitalInput.addEventListener('blur', () => {
+  if (!appState.capital) {
+    appState.capital = 100000000;
+    saveState();
+  }
+  capitalInput.value = nfRp.format(appState.capital);
+  document.getElementById('capital-slot-badge').textContent = 'Alokasi: ~' + formatRupiah(Math.round(appState.capital / ACTIVE_POSITIONS.length)) + ' / slot (' + ACTIVE_POSITIONS.length + ' posisi)';
+  renderPositionsTable(appState.capital);
 });
 
 function renderPositionsTable(userCapital = 100000000) {
@@ -1343,7 +1425,7 @@ function renderPositionsTable(userCapital = 100000000) {
   const slotCapital = userCapital / ACTIVE_POSITIONS.length;
   
   tbody.innerHTML = filtered.map((p, idx) => {
-    const lotSize = Math.max(1, Math.floor(slotCapital / (p.buyPx * 100)));
+    const lotSize = Math.max(0, Math.floor(slotCapital / (p.buyPx * 100)));
     const posValue = lotSize * 100 * p.lastPx;
     const tagClass = p.modul === 'B' ? 'tag-mod-b' : 'tag-mod-e';
     
@@ -1356,7 +1438,7 @@ function renderPositionsTable(userCapital = 100000000) {
       '<td>Rp ' + nfRp.format(p.buyPx) + '</td>' +
       '<td><strong>Rp ' + nfRp.format(p.lastPx) + '</strong></td>' +
       '<td><span style="color:var(--gain); font-weight:700;">+' + nfDec2.format(p.gain) + '%</span></td>' +
-      '<td><strong>' + nfRp.format(lotSize) + ' lot</strong></td>' +
+      '<td><strong>' + nfRp.format(lotSize) + ' lot</strong>' + (lotSize === 0 ? '<br><span style="font-size:0.72rem; color:var(--ink-muted);">modal per slot belum cukup</span>' : '') + '</td>' +
       '<td>' + formatRupiah(posValue) + '</td>' +
       '<td><span style="font-size:0.78rem; color:var(--ink-muted);">' + p.exitRule + '</span></td>' +
       '<td><span class="tag-action hold">' + p.action + '</span></td>' +
@@ -1371,17 +1453,17 @@ document.getElementById('search-posisi').addEventListener('input', () => {
 document.getElementById('btn-copy-orders').addEventListener('click', () => {
   const cap = parseRupiahInput(capitalInput.value);
   const slot = cap / ACTIVE_POSITIONS.length;
-  let text = '=== RAKAHTRADE ORDER LIST (15 OKT 2026) ===\n';
-  text += 'Broker: MNC Sekuritas (Fee Beli: 0.18%, Fee Jual: 0.28%)\n';
+  let text = 'RAKAHTRADE POSISI SNAPSHOT - DATA HISTORIS 14 OKT 2026\n';
+  text += 'Bukan rekomendasi atau order real-time. Broker: ' + appState.broker + ' (fee beli: ' + appState.feeBuy + '%, fee jual: ' + appState.feeSell + '%)\n';
   text += 'Modal Portofolio: ' + formatRupiah(cap) + '\n\n';
   ACTIVE_POSITIONS.forEach((p, idx) => {
-    const lot = Math.max(1, Math.floor(slot / (p.buyPx * 100)));
+    const lot = Math.max(0, Math.floor(slot / (p.buyPx * 100)));
     text += (idx + 1) + '. ' + p.code + ' - ' + lot + ' LOT @ Rp ' + nfRp.format(p.lastPx) + ' (' + p.modName + ')\n';
   });
   navigator.clipboard.writeText(text).then(() => {
     showToast('✓ Order list berhasil disalin ke clipboard!');
   }).catch(() => {
-    showToast('Order list siap diekspor.');
+    showToast('Clipboard tidak tersedia di konteks ini. Buka halaman lewat HTTPS untuk menyalin.');
   });
 });
 
@@ -1391,7 +1473,7 @@ document.getElementById('btn-export-orders').addEventListener('click', () => {
   const slot = cap / ACTIVE_POSITIONS.length;
   let csv = 'No,Kode,Modul,Tanggal_Masuk,Harga_Beli,Harga_Terakhir,Gain_Pct,Lot,Estimasi_Nilai_Rp,Tindakan\n';
   ACTIVE_POSITIONS.forEach((p, idx) => {
-    const lot = Math.max(1, Math.floor(slot / (p.buyPx * 100)));
+    const lot = Math.max(0, Math.floor(slot / (p.buyPx * 100)));
     const val = lot * 100 * p.lastPx;
     csv += (idx + 1) + ',' + p.code + ',' + p.modName + ',' + p.inDate + ',' + p.buyPx + ',' + p.lastPx + ',' + p.gain + ',' + lot + ',' + val + ',' + p.action + '\n';
   });
@@ -1405,17 +1487,17 @@ document.getElementById('btn-export-orders').addEventListener('click', () => {
 
 // ---------- Watchlist Data (Kompas100 Radar) ----------
 const WATCHLIST_STOCKS = [
-  { code: 'ACES', px: 890, rsi: 8.4, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'BELI BESOK', note: 'Pullback RSI(4) < 10 (Modul B)' },
+  { code: 'ACES', px: 890, rsi: 8.4, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'SINYAL BELI (SNAPSHOT)', note: 'Pullback RSI(4) < 10 (Modul B)' },
   { code: 'ANTM', px: 1540, rsi: 14.2, status: 'Uptrend MA50>200', dist: 'Dekat', reco: 'PANTAU', note: 'Mendekati area oversold' },
   { code: 'BRPT', px: 1090, rsi: 22.0, status: 'Uptrend Kuat', dist: '+2.1%', reco: 'PANTAU', note: 'Menunggu pullback RSI < 10' },
-  { code: 'INDF', px: 6850, rsi: 35.5, status: 'Golden Cross Baru', dist: '+0.5%', reco: 'BELI BESOK', note: 'Golden Cross terkonfirmasi' },
-  { code: 'JSMR', px: 4950, rsi: 9.1, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'BELI BESOK', note: 'Pullback RSI(4) < 10 (Modul B)' },
+  { code: 'INDF', px: 6850, rsi: 35.5, status: 'Golden Cross Baru', dist: '+0.5%', reco: 'SINYAL BELI (SNAPSHOT)', note: 'Golden Cross terkonfirmasi' },
+  { code: 'JSMR', px: 4950, rsi: 9.1, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'SINYAL BELI (SNAPSHOT)', note: 'Pullback RSI(4) < 10 (Modul B)' },
   { code: 'KLBF', px: 1680, rsi: 41.0, status: 'Konsolidasi', dist: 'Netral', reco: 'WAITING', note: 'Tren belum konfirmasi' },
   { code: 'MDKA', px: 2380, rsi: 29.0, status: 'Uptrend MA50>200', dist: '+3.4%', reco: 'PANTAU', note: 'Menunggu konfirmasi sinyal' },
   { code: 'MEDC', px: 1240, rsi: 48.0, status: 'Golden Cross Aktif', dist: 'Aktif', reco: 'PANTAU', note: 'Posisi trend berjalan' },
-  { code: 'PGAS', px: 1520, rsi: 7.8, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'BELI BESOK', note: 'RSI(4) 7.8 (Ekstrem Oversold)' },
+  { code: 'PGAS', px: 1520, rsi: 7.8, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'SINYAL BELI (SNAPSHOT)', note: 'RSI(4) 7.8 (Ekstrem Oversold)' },
   { code: 'PTBA', px: 2950, rsi: 32.0, status: 'Konsolidasi', dist: 'Netral', reco: 'WAITING', note: 'Menunggu golden cross MA50/200' },
-  { code: 'SMGR', px: 4100, rsi: 8.8, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'BELI BESOK', note: 'Pullback RSI(4) < 10 (Modul B)' }
+  { code: 'SMGR', px: 4100, rsi: 8.8, status: 'Uptrend MA50>200', dist: 'Tercapai', reco: 'SINYAL BELI (SNAPSHOT)', note: 'Pullback RSI(4) < 10 (Modul B)' }
 ];
 
 function renderWatchlist() {
@@ -1429,7 +1511,7 @@ function renderWatchlist() {
   else if (filterType === 'pullback') list = list.filter(s => s.rsi < 10);
   else if (filterType === 'gc') list = list.filter(s => s.status.includes('Golden Cross'));
   
-  document.getElementById('count-dipantau').textContent = list.length + ' Saham';
+  document.getElementById('count-dipantau').textContent = list.length + ' Sampel';
   
   tbody.innerHTML = list.map((s, idx) => {
     let recoTag = '<span class="tag-action hold">' + s.reco + '</span>';
@@ -1545,9 +1627,23 @@ function renderOverviewChart() {
   });
 }
 
+document.querySelectorAll('#tab-equity-curve [data-range]').forEach(button => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('#tab-equity-curve [data-range]').forEach(item => item.classList.remove('active'));
+    button.classList.add('active');
+    renderDetailEquityChart();
+  });
+});
+
 // ---------- Render Detailed Equity Curve & Drawdown Chart ----------
 function renderDetailEquityChart() {
-  const pts = EQUITY_POINTS;
+  const rangeButton = document.querySelector('#tab-equity-curve [data-range].active');
+  const selectedRange = rangeButton ? rangeButton.dataset.range : '5y';
+  const endDate = new Date(EQUITY_POINTS[EQUITY_POINTS.length - 1].t);
+  const startDate = new Date(endDate);
+  const years = { '1y': 1, '3y': 3, '5y': 5 }[selectedRange];
+  if (years) startDate.setFullYear(startDate.getFullYear() - years);
+  const pts = EQUITY_POINTS.filter(point => !years || new Date(point.t) >= startDate);
   const W = 1000, H = 280;
   const minEq = 90000000, maxEq = 500000000;
   const getX = (i) => (i / (pts.length - 1)) * W;
@@ -1649,6 +1745,10 @@ function renderJournal() {
       '<td><span style="font-size:0.78rem; color:var(--ink-muted);">' + t.reason + '</span></td>' +
     '</tr>';
   }).join('');
+  document.getElementById('count-trades').textContent = list.length + ' Sampel';
+  document.querySelector('#tab-trading-jurnal [data-tfilter="all"]').textContent = 'Semua (' + JOURNAL_TRADES.length + ')';
+  document.querySelector('#tab-trading-jurnal [data-tfilter="win"]').textContent = 'Menang (' + JOURNAL_TRADES.filter(trade => trade.ret > 0).length + ')';
+  document.querySelector('#tab-trading-jurnal [data-tfilter="loss"]').textContent = 'Rugi (' + JOURNAL_TRADES.filter(trade => trade.ret < 0).length + ')';
 }
 document.getElementById('search-journal').addEventListener('input', renderJournal);
 document.querySelectorAll('#tab-trading-jurnal .filter-btn').forEach(btn => {
@@ -1675,15 +1775,7 @@ document.getElementById('btn-export-journal').addEventListener('click', () => {
 
 // ---------- Simulation Re-run Button ----------
 document.getElementById('btn-run-sim').addEventListener('click', () => {
-  const btn = document.getElementById('btn-run-sim');
-  btn.disabled = true;
-  btn.textContent = '⏳ Menghitung Backtest Fee MNC (0.18% / 0.28%)...';
-  
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.textContent = '▶ Jalankan Simulasi Ulang';
-    showToast('Simulasi Rakahtrade selesai dengan Fee MNC Sekuritas!');
-  }, 1200);
+  showToast('Mesin backtest belum tersedia. Tidak ada simulasi yang dijalankan.');
 });
 
 // ---------- Background Data Loader ----------
