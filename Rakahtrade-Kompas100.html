@@ -1389,6 +1389,7 @@ const ACTIVE_POSITIONS = [
 // ---------- Capital Calculator Reactive Engine ----------
 const capitalInput = document.getElementById('input-capital');
 capitalInput.value = nfRp.format(appState.capital);
+document.getElementById('capital-slot-badge').textContent = 'Alokasi: ~' + formatRupiah(Math.round(appState.capital / ACTIVE_POSITIONS.length)) + ' / slot (' + ACTIVE_POSITIONS.length + ' posisi)';
 document.getElementById('modal-broker-preset').value = appState.broker;
 document.getElementById('header-broker-tag').textContent = BROKER_PRESETS[appState.broker].name;
 document.getElementById('p-fee-b').value = appState.feeBuy;
