@@ -184,9 +184,9 @@ body {
 .pulse-dot {
   width: 8px;
   height: 8px;
-  background: #10b981;
+  background: var(--mod-cash);
   border-radius: 50%;
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  box-shadow: none;
   animation: pulse 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
 }
 @keyframes pulse {
@@ -751,7 +751,7 @@ table.data-table tr:hover td { background: var(--panel-hover); }
   <button type="button" class="nav-tab" data-tab="dipantau">Sedang Dipantau</button>
   <button type="button" class="nav-tab" data-tab="equity-curve">Equity Curve</button>
   <button type="button" class="nav-tab" data-tab="trading-jurnal">Trading Jurnal</button>
-  <button type="button" class="nav-tab" data-tab="backtest">Backtest</button>
+  <button type="button" class="nav-tab" data-tab="backtest">Parameter Strategi</button>
 </nav>
 
 <!-- Main Workspace -->
@@ -1108,7 +1108,7 @@ table.data-table tr:hover td { background: var(--panel-hover); }
     <div class="section-panel">
       <div class="section-title-bar">
         <div>
-          <div class="section-title">Pengaturan &amp; Simulasi Ulang Sistem Rakahtrade</div>
+          <div class="section-title">Parameter Strategi (Draft)</div>
           <div class="brand-sub">Draft parameter saja · belum ada mesin backtest atau hasil simulasi yang dapat dijalankan</div>
         </div>
         <button class="btn-pill primary" id="btn-run-sim">
